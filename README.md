@@ -1,5 +1,60 @@
 # CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+## Self-Driving Car Engineer Nanodegree Program
+---
+## Overview
+The primary goal of this project is to implement a Model Predictive Controller that could steer and successfully navigate a car in the simulator by sending steering and acceleration/decceleration commands. The project uses Ipopt and CppAD libraries to calculate trajectory and actuations to minimize error using third degree polynomial fit to the given waypoints. The solution has been optimized based on vehicle kinematic model and cost function based on Cross Track Error(CTE) and Orientation Error(epsi).
+
+---
+
+## Model
+The MPC model involves tracking state and actuation commands using the attributes given below:
+
+The state is calculated using the following attributes:
+* Vehicle position denoted by x and y
+* Vehicle orientation denoted by psi
+* Vehicle velocity by v
+* Vehicle Cross Track Error by cte
+* Vehicle Orientation Error by epsi
+
+The actuation attributes are:
+* Steering angle denoted by delta
+* Acceleration denoted by "a"
+
+The model described combines and state and actuation commands from previous time-step to calculate the current time-step using the equations given below:
+
+![](./images/model_equations.png)
+
+---
+
+## Tuning - Time-step and Elapsed duration
+The final values chosen for time-step length N and duration dt are 10 and 0.1 respectively. The values have been arrived by reviewing Udacity discussion forums and Udacity Q&A sessions on youtube. The combination of N=10 and dt=0.1 has been found to optimal focusing on a time lapse of one second to find MPC trajectory. Anything long or short has been observed to have adverse effect on the performance of the car on the track. The combinations tried are given below:
+
+  * N = 25 and dt = 0.05
+  * N = 15 and dt = 0.02
+  * N = 10 and dt = 0.1  
+
+Larger N values have been found to increase processing time in addition to latency effecting the reaction time on the track. A value of time-step duration that syncs up with latency of 100ms (100/1000=0.1s) has been found to be optimal value.
+
+---
+
+## MPC Preprocessing and Polynomial Fitting
+The waypoints are transformed to car's perspective by considering vehicles co-ordinates(px, py) and orientation(psi) to be zero simplifying third degree polynomial fit. This approach helped in translating reference path relative to car's co-ordinates subsequently applying the coefficients for MPC calculation.
+
+---
+
+## Latency
+Since the actuations are applied to subsequent time-steps the original equations from the lessons have to be tuned to account for the latency from previous time-steps. This change has been demonstrated lines 107-110 in MPC.cpp.
+
+---
+## Additional Tuning
+At higher speeds i.e. when the car goes at more than 35mph, the car has been found to react to high values to steering. The cost function had to be tuned to support higher speeds. The following factors have been chosen to ensure proper balance. The multiplication factors have been decided with trial and error. The Udacity Q&A session provided some clues on what values would ensure car goes round the track successfully at speeds of 70mph and more. The code lines can be found in MPC.cpp lines 51-70.
+* Reference State - Changes related to following parameters
+  *  Cross Track Error (cte) - Multiplier of 3000
+  *  Orientation Angle (psi) - Multiplier of 3000
+  *  Velocity (v)
+* Actuations (Changes in Steering angle)
+  *  Changes in Steering Angle (Delta) - Multiplier of 200
+  *  Acceleration (a) - Multiplier of 10
 
 ---
 
@@ -19,7 +74,7 @@ Self-Driving Car Engineer Nanodegree Program
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -31,7 +86,7 @@ Self-Driving Car Engineer Nanodegree Program
   * Mac: `brew install ipopt`
   * Linux
     * You will need a version of Ipopt 3.12.1 or higher. The version available through `apt-get` is 3.11.x. If you can get that version to work great but if not there's a script `install_ipopt.sh` that will install Ipopt. You just need to download the source from the Ipopt [releases page](https://www.coin-or.org/download/source/Ipopt/) or the [Github releases](https://github.com/coin-or/Ipopt/releases) page.
-    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `bash install_ipopt.sh Ipopt-3.12.1`. 
+    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `bash install_ipopt.sh Ipopt-3.12.1`.
   * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
 * [CppAD](https://www.coin-or.org/CppAD/)
   * Mac: `brew install cppad`
